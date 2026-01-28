@@ -3,7 +3,7 @@ import pyodbc
 
 # Настройте под своё окружение
 DB_CONFIG = {
-    'server': 'DESKTOP-7KN37DO\SQLEXPRESS',
+    'server': 'DESKTOP-5E57C75\SQLEXPRESS',
     'database': 'QueueSystem',
 }
 
@@ -15,4 +15,5 @@ def get_db_connection():
         f"DATABASE={DB_CONFIG['database']};"
         f"Trusted_Connection=yes;"
     )
+
     return pyodbc.connect(conn_str)
