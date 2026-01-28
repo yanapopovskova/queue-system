@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Выдача талонов</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Получить талон</h1>
+        <form method="POST" action="/issue-ticket">
+            <label>Имя:</label>
+            <input type="text" name="first_name" required>
+
+            <label>Фамилия:</label>
+            <input type="text" name="last_name" required>
+
+            <label>Телефон (опционально):</label>
+            <input type="text" name="phone">
+
+            <label>Услуга:</label>
+            <select name="service_id" required>
+                {% for service in services %}
+                    <option value="{{ service.id_услуга }}">{{service.название_услуги}}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Получить талон</button>
+            <a href="{{ url_for('display') }}">Просмотр табло</a>
+        </form>
+    </div>
+</body>
+</html>

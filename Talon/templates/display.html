@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Табло очереди</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Текущий номер</h1>
+        <div id="current" class="display-screen">--</div>
+        <a href="{{ url_for('index') }}">Вернуться к получению талона</a>
+    </div>
+
+    <script>
+        function updateDisplay() {
+            fetch('/api/current-ticket')
+                .then(res => res.json())
+                .then(data => {
+                    const el = document.getElementById('current');
+                    if (data.ticket_number) {
+                        el.textContent = data.ticket_number;
+                    } else {
+                        el.textContent = '--';
+                    }
+                });
+        }
+        updateDisplay();
+        setInterval(updateDisplay, 5000); // polling каждые 5 сек
+    </script>
+</body>
+</html>

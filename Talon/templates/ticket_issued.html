@@ -1,0 +1,17 @@
+<!-- templates/ticket_issued.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ваш талон</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Ваш талон успешно выдан!</h1>
+        <p><strong>Номер талона:</strong> <span style="font-size: 2em; color: #007bff;">{{ ticket_number }}</span></p>
+        <p><strong>Услуга:</strong> {{ service }}</p>
+        <a href="{{ url_for('index') }}">Получить ещё один талон</a>
+        <a href="{{ url_for('display') }}">Просмотр табло</a>
+    </div>
+</body>
+</html>

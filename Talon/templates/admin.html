@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Админ-панель</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .admin-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .admin-buttons button {
+            padding: 15px 30px;
+            font-size: 18px;
+        }
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Админ-панель</h1>
+
+        <div class="admin-buttons">
+            <button onclick="callNext()">Следующий</button>
+            <button onclick="startService()">Начать обслуживание</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        function showStatus(msg) {
+            document.getElementById('status').textContent = msg;
+            setTimeout(() => document.getElementById('status').textContent = '', 3000);
+        }
+
+        function callNext() {
+            fetch('/api/next', { method: 'GET' })
+                .then(() => showStatus('Вызван следующий клиент!'));
+        }
+
+        function startService() {
+            fetch('/api/start-service', { method: 'GET' })
+                .then(() => showStatus('Обслуживание начато!'));
+        }
+    </script>
+</body>
+</html>
