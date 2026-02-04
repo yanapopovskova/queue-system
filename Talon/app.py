@@ -18,7 +18,7 @@ def generate_ticket_number(client_id, first_name, last_name):
 def index():
     conn = config.get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id_услуга, название_услуги FROM Услуга")
+    cursor.execute("SELECT id_service, service_name FROM Service")
     services = cursor.fetchall()
     conn.close()
     return render_template('index.html', services=services)
@@ -36,15 +36,15 @@ def issue_ticket():
 
     # Поиск клиента
     cursor.execute("""
-        SELECT id_клиент FROM Клиент 
-        WHERE имя = ? AND фамилия = ? AND номер_телефона = ?
+        SELECT id_client FROM Client 
+        WHERE first_name = ? AND last_name = ? AND phone_number = ?
     """, (first_name, last_name, phone))
     client = cursor.fetchone()
 
     if not client:
         cursor.execute("""
-            INSERT INTO Клиент (имя, фамилия, номер_телефона)
-            OUTPUT INSERTED.id_клиент
+            INSERT INTO Client (first_name, last_name, phone_number)
+            OUTPUT INSERTED.id_client
             VALUES (?, ?, ?)
         """, (first_name, last_name, phone))
         client_id = cursor.fetchone()[0]
@@ -53,12 +53,12 @@ def issue_ticket():
         client_id = client[0]
 
     # Получаем название услуги
-    cursor.execute("SELECT название_услуги FROM Услуга WHERE id_услуга = ?", (service_id,))
+    cursor.execute("SELECT service_name FROM Service WHERE id_service = ?", (service_id,))
     service_name = cursor.fetchone()[0]
 
     # Создаём талон
     cursor.execute("""
-        INSERT INTO Талон (тип_услуги, id_клиент)
+        INSERT INTO Talon (service_type, id_client)
         VALUES (?, ?)
     """, (service_name, client_id))
     conn.commit()
@@ -81,16 +81,16 @@ def current_ticket():
     cursor = conn.cursor()
     cursor.execute("""
         SELECT TOP 1 
-            t.id_талон,
-            t.тип_услуги,
-            c.id_клиент,
-            c.имя,
-            c.фамилия
-        FROM Талон t
-        JOIN Клиент c ON t.id_клиент = c.id_клиент
-        WHERE t.время_вызова_клиента IS NOT NULL 
-          AND t.время_начала_обслуживания IS NULL
-        ORDER BY t.время_вызова_клиента ASC
+            t.id_talon,
+            t.service_type,
+            c.id_client,
+            c.first_name,
+            c.last_name
+        FROM Talon t
+        JOIN Client c ON t.id_client = c.id_client
+        WHERE t.call_time IS NOT NULL 
+          AND t.service_start_time IS NULL
+        ORDER BY t.call_time ASC
     """)
     row = cursor.fetchone()
     conn.close()
@@ -119,18 +119,18 @@ def start_service():
     # Найти вызванного, но ещё не начавшего клиента
     cursor.execute("""
         SELECT TOP 1 id_талон 
-        FROM Талон 
-        WHERE время_вызова_клиента IS NOT NULL 
-          AND время_начала_обслуживания IS NULL
-        ORDER BY время_вызова_клиента ASC
+        FROM Talon 
+        WHERE call_time IS NOT NULL 
+          AND service_start_time IS NULL
+        ORDER BY call_time ASC
     """)
     ticket = cursor.fetchone()
 
     if ticket:
         cursor.execute("""
-            UPDATE Талон 
-            SET время_начала_обслуживания = ? 
-            WHERE id_талон = ?
+            UPDATE Talon 
+            SET service_start_time = ? 
+            WHERE id_talon = ?
         """, (now, ticket[0]))
         conn.commit()
 
@@ -145,41 +145,42 @@ def next_ticket():
 
     # 1. Найти текущего вызванного клиента (который ещё не начал или уже начал, но не завершил)
     cursor.execute("""
-        SELECT id_талон 
-        FROM Талон 
-        WHERE время_вызова_клиента IS NOT NULL 
-          AND время_окончания_обслуживания IS NULL
-        ORDER BY время_вызова_клиента ASC
+        SELECT id_talon 
+        FROM Talon
+        WHERE service_start_time IS NOT NULL 
+          AND service_end_time IS NULL
+        ORDER BY call_time ASC
     """)
     current = cursor.fetchone()
 
     # 2. Если такой есть — завершить его обслуживание
     if current:
         cursor.execute("""
-            UPDATE Талон 
-            SET время_окончания_обслуживания = ? 
-            WHERE id_талон = ?
+            UPDATE Talon 
+            SET service_end_time = ? 
+            WHERE id_talon = ?
         """, (now, current[0]))
 
     # 3. Найти следующего в очереди (ещё не вызванного)
     cursor.execute("""
-        SELECT TOP 1 id_талон 
-        FROM Талон 
-        WHERE время_вызова_клиента IS NULL
-        ORDER BY время_создания_талона ASC
+        SELECT TOP 1 id_talon 
+        FROM Talon  
+        WHERE call_time IS NULL
+        ORDER BY creation_time ASC
     """)
     next_ticket_row = cursor.fetchone()
 
     if next_ticket_row:
         # Вызвать следующего
         cursor.execute("""
-            UPDATE Талон 
-            SET время_вызова_клиента = ? 
-            WHERE id_талон = ?
+            UPDATE Talon  
+            SET call_time = ? 
+            WHERE id_talon = ?
         """, (now, next_ticket_row[0]))
 
     conn.commit()
     conn.close()
     return '', 204
 if __name__ == '__main__':
+    
     app.run(debug=True, host='0.0.0.0', port=5000)
